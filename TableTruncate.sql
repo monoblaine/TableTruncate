@@ -13,12 +13,13 @@ SET NOCOUNT ON;
 
 BEGIN TRAN
 
-DECLARE @NextId NUMERIC = CASE WHEN (IDENT_CURRENT(@TableName) = 1) THEN 1 ELSE 0 END
-DECLARE @Sql NVARCHAR(MAX) = 'DELETE FROM [' + @TableName + ']'
+DECLARE @TableNameDelimited NVARCHAR(128) = CASE WHEN @TableName LIKE '%[.\]"'']' ESCAPE '\' THEN @TableName ELSE '[' + @TableName + ']' END
+DECLARE @NextId NUMERIC = CASE WHEN (IDENT_CURRENT(@TableNameDelimited) = 1) THEN 1 ELSE 0 END
+DECLARE @Sql NVARCHAR(MAX) = 'DELETE FROM ' + @TableNameDelimited
 EXECUTE sp_executesql @Sql
 
 IF (@@ERROR = 0) BEGIN
-	DBCC CHECKIDENT (@TableName, RESEED, @NextId)
+	DBCC CHECKIDENT (@TableNameDelimited, RESEED, @NextId)
 	
 	COMMIT TRAN
 END ELSE BEGIN
